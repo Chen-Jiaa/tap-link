@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/app/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export default async function TapPage() {
   const supabase = await createClient()
