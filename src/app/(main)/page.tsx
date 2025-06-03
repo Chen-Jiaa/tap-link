@@ -2,6 +2,10 @@ import { redirect } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
 
+interface CurrentSegmentRow {
+  url: string
+}
+
 export default async function TapPage() {
   const supabase = await createClient()
 
@@ -11,7 +15,7 @@ export default async function TapPage() {
     .eq('is_active', true)
     .order('updated_at', { ascending: false })
     .limit(1)
-    .single()
+    .single<CurrentSegmentRow>()
 
   if (error || !data.url) {
     throw new Error('Redirect URL not found.')
