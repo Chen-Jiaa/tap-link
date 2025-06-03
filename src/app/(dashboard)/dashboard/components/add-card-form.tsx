@@ -2,13 +2,14 @@
 
 import type React from "react"
 
+import { Plus } from "lucide-react"
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Plus } from "lucide-react"
 
 interface AddCardFormProps {
   onAddCard: (segment: string, url: string) => void
@@ -30,7 +31,7 @@ export default function AddCardForm({ onAddCard }: AddCardFormProps) {
   }
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover onOpenChange={setIsOpen} open={isOpen}>
       <PopoverTrigger asChild>
         <Card className="w-full max-w-sm border-2 border-dashed border-muted-foreground/50 transition-all duration-200 hover:border-muted-foreground cursor-pointer hover:shadow-lg">
           <CardHeader className="pb-3">
@@ -45,7 +46,7 @@ export default function AddCardForm({ onAddCard }: AddCardFormProps) {
         </Card>
       </PopoverTrigger>
       <PopoverContent className="w-80">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Add New Link</h4>
             <p className="text-sm text-muted-foreground">Enter the details for new link.</p>
@@ -54,28 +55,28 @@ export default function AddCardForm({ onAddCard }: AddCardFormProps) {
             <Label htmlFor="segment">Title</Label>
             <Input
               id="segment"
+              onChange={(e) => { setSegment(e.target.value); }}
               placeholder="e.g., Discord"
-              value={segment}
-              onChange={(e) => setSegment(e.target.value)}
               required
+              value={segment}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="url">URL</Label>
             <Input
               id="url"
-              type="url"
+              onChange={(e) => { setUrl(e.target.value); }}
               placeholder="e.g., https://discord.com"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
               required
+              type="url"
+              value={url}
             />
           </div>
           <div className="flex gap-2">
-            <Button type="submit" className="flex-1">
+            <Button className="flex-1" type="submit">
               Submit
             </Button>
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
+            <Button className="flex-1" onClick={() => { setIsOpen(false); }} type="button" variant="outline">
               Cancel
             </Button>
           </div>

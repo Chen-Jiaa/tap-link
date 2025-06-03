@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+
 import { createClient } from '@/lib/supabase/server'
 
 export default async function TapPage() {
@@ -12,7 +13,7 @@ export default async function TapPage() {
     .limit(1)
     .single()
 
-  if (error || !data?.url) {
+  if (error || !data.url) {
     throw new Error('Redirect URL not found.')
   }
 
