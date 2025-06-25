@@ -1,37 +1,30 @@
 import { redirect } from 'next/navigation'
 
-import { createSimpleClient } from '@/lib/supabase/server'
+import { createPooledClient } from '@/lib/supabase/server-pooled'
 
 interface CurrentSegmentRow {
   url: string
 }
 
 export default async function TapPage() {
+  const supabase = createPooledClient()
 
-  console.time('total-function')
-  console.time('supabase-connection')
-
-  const supabase = createSimpleClient()
-  console.timeEnd('supabase-connection')
-
-  console.time('supabase-query')
-  const networkStart = performance.now()
   const { data, error } = await supabase
     .from('current_segment')
     .select('url')
     .eq('is_active', true)
-    .single()
-  const networkEnd = performance.now()
-  console.timeEnd('supabase-query')
-  console.log('Network round-trip:', Math.round(networkEnd - networkStart), 'ms')
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Database error: ${error.message}`)
+  }
 
   const typedData = data as CurrentSegmentRow | null
 
-  if (error || !typedData?.url) {
+  if (!typedData?.url) {
     throw new Error('Redirect URL not found.')
   }
 
-  console.timeEnd('total-function')
   redirect(typedData.url)
-
 }
