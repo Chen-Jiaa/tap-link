@@ -56,7 +56,7 @@ export default function AddCardForm({ onAddCard }: AddCardFormProps) {
             <Input
               id="segment"
               onChange={(e) => { setSegment(e.target.value); }}
-              placeholder="e.g., Discord"
+              placeholder="e.g., Collective"
               required
               value={segment}
             />
@@ -66,7 +66,7 @@ export default function AddCardForm({ onAddCard }: AddCardFormProps) {
             <Input
               id="url"
               onChange={(e) => { setUrl(e.target.value); }}
-              placeholder="e.g., https://discord.com"
+              placeholder="e.g., https://collective.my"
               required
               type="url"
               value={url}
