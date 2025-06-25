@@ -7,7 +7,19 @@ if (supabaseAnonKey === undefined || supabaseUrl === undefined) {
     throw new Error('Missing Supabase environment variables')
   }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey,{
+  auth: {
+    persistSession: false, // Disable for server-side usage
+  },
+  db: {
+    schema: 'public',
+  },
+  global: {
+    headers: { 
+      'x-client-info': 'tap-page-app' // Custom header for identification
+    },
+  },
+})
 
 export interface Segment {
   id: number
