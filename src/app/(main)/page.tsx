@@ -2,8 +2,6 @@ import { redirect } from 'next/navigation'
 
 import { createSimpleClient } from '@/lib/supabase/server'
 
-
-
 interface CacheEntry {
   timestamp: number
   url: string
@@ -34,19 +32,20 @@ export default async function TapPage() {
   const { data, error } = await supabase
     .from('current_segment')
     .select('url')
-    .limit(1)
-    // .eq('is_active', true)
-    // .single<CurrentSegmentRow>()
+    .eq('is_active', true)
+    .single()
   const networkEnd = performance.now()
   console.timeEnd('supabase-query')
   console.log('Network round-trip:', Math.round(networkEnd - networkStart), 'ms')
 
-  if (error || !data.url) {
+  const typedData = data as CurrentSegmentRow | null
+
+  if (error || !typedData?.url) {
     throw new Error('Redirect URL not found.')
   }
 
-  cache.set('url', { timestamp: Date.now(), url: data.url })
+  cache.set('url', { timestamp: Date.now(), url: typedData.url })
   console.timeEnd('total-function')
-  redirect(data.url)
+  redirect(typedData.url)
 
 }
