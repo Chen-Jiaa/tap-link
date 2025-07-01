@@ -1,34 +1,23 @@
-import { redirect } from 'next/navigation'
+import { eq } from 'drizzle-orm';
+import { redirect } from 'next/navigation';
 
-import { createPooledClient } from '@/lib/supabase/server-pooled'
+import { db } from '@/db/drizzle';
+import { currentSegment } from '@/db/schema';
 
-interface CurrentSegmentRow {
-  url: string
-}
-
-// Force dynamic rendering - disable caching
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// Disable caching for dynamic behavior
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function TapPage() {
-  const supabase = createPooledClient()
+  const [segment] = await db
+    .select({ url: currentSegment.url })
+    .from(currentSegment)
+    .where(eq(currentSegment.isActive, true))
+    .limit(1);
 
-  const { data, error } = await supabase
-    .from('current_segment')
-    .select('url')
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle()
-
-  if (error) {
-    throw new Error(`Database error: ${error.message}`)
+  if (!segment.url) {
+    throw new Error('Redirect URL not found.');
   }
 
-  const typedData = data as CurrentSegmentRow | null
-
-  if (!typedData?.url) {
-    throw new Error('Redirect URL not found.')
-  }
-
-  redirect(typedData.url)
+  redirect(segment.url);
 }
