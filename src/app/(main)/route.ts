@@ -33,6 +33,7 @@ export async function GET(req: Request) {
           user_agent: userAgent,
         },
       ]);
+      console.log('Insert success:', data);
     } catch (error) {
       console.error('Logging failed:', error);
     }
