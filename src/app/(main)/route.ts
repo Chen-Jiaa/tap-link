@@ -23,10 +23,8 @@ export async function GET(req: Request) {
     return new Response('Not found', { status: 404 });
   }
 
-  // Gather metadata
   const userAgent = req.headers.get('user-agent') ?? null;
 
-  // Fire-and-forget logging
   void (async () => {
     try {
       await supabase.from('redirect_logs').insert([
