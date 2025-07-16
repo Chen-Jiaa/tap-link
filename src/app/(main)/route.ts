@@ -25,19 +25,20 @@ export async function GET(req: Request) {
 
   const userAgent = req.headers.get('user-agent') ?? null;
 
-  void (async () => {
-    try {
-      await supabase.from('redirect_logs').insert([
-        {
-          redirected_url: url,
-          user_agent: userAgent,
-        },
-      ]);
-      console.log('Insert success:', data);
-    } catch (error) {
-      console.error('Logging failed:', error);
+   try {
+    const { error: insertError } = await supabase.from('redirect_logs').insert([
+      {
+        redirected_url: url,
+        user_agent: userAgent,
+      },
+    ]);
+    
+    if (insertError) {
+      console.error('Logging failed:', insertError);
     }
-  })();
+  } catch (error) {
+    console.error('Logging failed:', error);
+  }
 
 
 
