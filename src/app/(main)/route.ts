@@ -5,7 +5,7 @@ export const preferredRegion = 'sin1';
 
 const supabase = createSimpleClient();
 
-export async function GET() {
+export async function GET(req: Request) {
   const { data, error } = await supabase
     .from('current_segment')
     .select('url')
@@ -22,6 +22,25 @@ export async function GET() {
   if (!url) {
     return new Response('Not found', { status: 404 });
   }
+
+  // Gather metadata
+  const userAgent = req.headers.get('user-agent') ?? null;
+
+  // Fire-and-forget logging
+  void (async () => {
+    try {
+      await supabase.from('redirect_logs').insert([
+        {
+          redirected_url: url,
+          user_agent: userAgent,
+        },
+      ]);
+    } catch (error) {
+      console.error('Logging failed:', error);
+    }
+  })();
+
+
 
   return new Response(null, {
     headers: {
