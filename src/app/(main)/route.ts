@@ -25,7 +25,7 @@ export async function GET(req: Request) {
 
   const userAgent = req.headers.get('user-agent') ?? null;
 
-   try {
+  try {
     const { error: insertError } = await supabase.from('redirect_logs').insert([
       {
         redirected_url: url,

@@ -1,55 +1,21 @@
-// import { eq } from 'drizzle-orm';Add commentMore actions
-// import { NextResponse } from 'next/server';
-
-// import { db } from '@/db/drizzle';
-// import { currentSegment } from '@/db/schema';
-
-// export const dynamic = 'force-dynamic';
-// export const revalidate = 0;
-// export const preferredRegion = 'sin1';
-
-// export async function GET() {
-//   const totalStart = performance.now();
-
-//   console.log('[TIMING] → GET handler started');
-
-//   const queryStart = performance.now();
-//   const [segment] = await db
-//     .select({ url: currentSegment.url })
-//     .from(currentSegment)
-//     .where(eq(currentSegment.isActive, true))
-//     .limit(1);
-//   const queryEnd = performance.now();
-
-//   console.log(`[TIMING] → DB query took ${(queryEnd - queryStart).toFixed(2)}ms`);
-
-//   if (!segment.url) {
-//     const notFoundEnd = performance.now();
-//     console.log(`[TIMING] → Redirect not found response took ${(notFoundEnd - totalStart).toFixed(2)}ms total`);
-//     return new NextResponse('Redirect URL not found.', { status: 404 });
-//   }
-
-//   const redirectEnd = performance.now();
-//   console.log(`[TIMING] → Redirect response prepared in ${(redirectEnd - totalStart).toFixed(2)}ms total`);
-
-//   return NextResponse.redirect(segment.url);
-// }
-
 "use client"
 
 import type React from "react"
 
+import { InferSelectModel } from "drizzle-orm"
 import { useEffect, useState } from "react"
 
-import { type Segment, supabase } from "@/lib/supabase/client"
+import { currentSegment } from "@/db/schema"
 
 import AddCardForm from "./components/add-card-form"
 import ClickableCard from "./components/clickable-card"
 import EditCardForm from "./components/edit-card-form"
 
+type CurrentSegment = InferSelectModel<typeof currentSegment>
+
 export default function Page() {
-  const [cardData, setCardData] = useState<Segment[]>([])
-  const [editingCard, setEditingCard] = useState<null | Segment>(null)
+  const [cardData, setCardData] = useState<CurrentSegment[]>([])
+  const [editingCard, setEditingCard] = useState<CurrentSegment | null>(null)
   const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false)
   const [draggedCardId, setDraggedCardId] = useState<null | number>(null)
   const [dragOverCardId, setDragOverCardId] = useState<null | number>(null)
@@ -62,16 +28,12 @@ export default function Page() {
 
   const fetchSegments = async () => {
     try {
-      const { data, error } = await supabase.from("current_segment").select("*").order("id", { ascending: true })
-
-      if (error) {
-        console.error("Error fetching segments:", error)
-        return
-      }
-
+      const res = await fetch('/api/segments')
+      if (!res.ok) throw new Error('Failed to fetch segments')
+      const data = await res.json() as CurrentSegment[]
       setCardData(data)
     } catch (error) {
-      console.error("Error fetching segments:", error)
+      console.error('Error fetching segments:', error)
     } finally {
       setLoading(false)
     }
@@ -79,30 +41,19 @@ export default function Page() {
 
   const handleCardClick = async (cardId: number) => {
     try {
-      // First, set all segments to inactive
-      const { error: updateAllError } = await supabase.from("current_segment").update({ is_active: false }).neq("id", 0) // Update all rows
-
-      if (updateAllError) {
-        console.error("Error updating all segments:", updateAllError)
-        return
-      }
-
-      // Check if the clicked card is currently active
-      const currentCard = cardData.find((card) => card.id === cardId)
-      const newActiveState = !currentCard?.is_active
-
       // If we're activating a card, set it to active
-      if (newActiveState) {
-        const { error: updateActiveError } = await supabase
-          .from("current_segment")
-          .update({ is_active: true })
-          .eq("id", cardId)
+      const res = await fetch('/api/segments', {
+        body: JSON.stringify({
+          activateOnly: true,
+          id: cardId,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'PATCH',
+      })
 
-        if (updateActiveError) {
-          console.error("Error updating active segment:", updateActiveError)
-          return
-        }
-      }
+      if (!res.ok) throw new Error('Failed to update segment')
 
       // Refresh the data
       await fetchSegments()
@@ -113,27 +64,23 @@ export default function Page() {
 
   const handleAddCard = async (segment: string, url: string) => {
     try {
-      const { error } = await supabase
-        .from("current_segment")
-        .insert([
-          {
-            is_active: false,
-            segment: segment,
-            url: url,
-          },
-        ])
-        .select()
+      const res = await fetch ('/api/segments', {
+        body: JSON.stringify({
+          segment,
+          url,
+        }),
+        headers: {
+          'Content-Type': 'applicatino/json',
+        },
+        method: 'POST',
+      })
 
-      if (error) {
-        console.error("Error adding segment:", error)
-        return
-      }
+      if (!res.ok) throw new Error('Failed to add segment')
 
-      // Refresh the data
       await fetchSegments()
-    } catch (error) {
-      console.error("Error adding segment:", error)
-    }
+      } catch (error) {
+        console.error("Error adding segment:", error)
+      }
   }
 
   const handleEditCard = (id: number) => {
@@ -148,21 +95,24 @@ export default function Page() {
     if (!editingCard) return
 
     try {
-      const { error } = await supabase
-        .from("current_segment")
-        .update({
-          segment: segment,
-          url: url,
-        })
-        .eq("id", editingCard.id)
+      const res = await fetch('/api/segments', {
+        body: JSON.stringify({
+          activateOnly: false,
+          id: editingCard.id,
+          segment,
+          url,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'PATCH'
+      })
 
-      if (error) {
-        console.error("Error updating segment:", error)
-        return
-      }
+      if (!res.ok) throw new Error ('Failed to update segment')
 
       setEditingCard(null)
-      // Refresh the data
+      setIsEditPopoverOpen(false)
+
       await fetchSegments()
     } catch (error) {
       console.error("Error updating segment:", error)
@@ -171,14 +121,17 @@ export default function Page() {
 
   const handleDeleteCard = async (id: number) => {
     try {
-      const { error } = await supabase.from("current_segment").delete().eq("id", id)
 
-      if (error) {
-        console.error("Error deleting segment:", error)
-        return
-      }
+      const res = await fetch('/api/segments', {
+        body: JSON.stringify({id}),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'DELETE',
+      })
 
-      // Refresh the data
+      if (!res.ok) throw new Error ('Failed to delete segment')
+
       await fetchSegments()
     } catch (error) {
       console.error("Error deleting segment:", error)
@@ -230,7 +183,7 @@ export default function Page() {
     // and update it here. For now, the order is maintained by ID.
   }
 
-  const activeCard = cardData.find((card) => card.is_active)
+  const activeCard = cardData.find((card) => card.isActive)
 
   if (loading) {
     return (
@@ -260,7 +213,7 @@ export default function Page() {
             <ClickableCard
               header={card.segment}
               id={card.id}
-              isActive={card.is_active}
+              isActive={card.isActive}
               isDragging={draggedCardId === card.id}
               onClick={() => void handleCardClick(card.id)}
               onDelete={()=> void handleDeleteCard(card.id)}
