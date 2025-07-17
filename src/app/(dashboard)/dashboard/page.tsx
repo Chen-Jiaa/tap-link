@@ -6,6 +6,7 @@ import { InferSelectModel } from "drizzle-orm"
 import { useEffect, useState } from "react"
 
 import { currentSegment } from "@/db/schema"
+import { activateSegment, addSegment, deleteSegment, getSegments, updateSegment, } from "@/lib/api/segments"
 
 import AddCardForm from "./components/add-card-form"
 import ClickableCard from "./components/clickable-card"
@@ -23,64 +24,31 @@ export default function Page() {
 
   // Fetch segments from Supabase on component mount
   useEffect(() => {
-    void fetchSegments()
+    void getSegments().then(setCardData).finally(() => { setLoading(false); })
   }, [])
 
   const fetchSegments = async () => {
-    try {
-      const res = await fetch('/api/segments')
-      if (!res.ok) throw new Error('Failed to fetch segments')
-      const data = await res.json() as CurrentSegment[]
-      setCardData(data)
-    } catch (error) {
-      console.error('Error fetching segments:', error)
-    } finally {
-      setLoading(false)
-    }
+      try {
+        const res = await fetch('/api/segments')
+        if (!res.ok) throw new Error('Failed to fetch segments')
+        const data = await res.json() as CurrentSegment[]
+        return data
+      } catch (error) {
+        console.error('Error fetching segments:', error)
+        return []
+      } finally {
+        setLoading(false)
+      }
   }
 
   const handleCardClick = async (cardId: number) => {
-    try {
-      // If we're activating a card, set it to active
-      const res = await fetch('/api/segments', {
-        body: JSON.stringify({
-          activateOnly: true,
-          id: cardId,
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        method: 'PATCH',
-      })
-
-      if (!res.ok) throw new Error('Failed to update segment')
-
-      // Refresh the data
-      await fetchSegments()
-    } catch (error) {
-      console.error("Error handling card click:", error)
-    }
+    await activateSegment(cardId)
+    await refreshData()
   }
 
   const handleAddCard = async (segment: string, url: string) => {
-    try {
-      const res = await fetch ('/api/segments', {
-        body: JSON.stringify({
-          segment,
-          url,
-        }),
-        headers: {
-          'Content-Type': 'applicatino/json',
-        },
-        method: 'POST',
-      })
-
-      if (!res.ok) throw new Error('Failed to add segment')
-
-      await fetchSegments()
-      } catch (error) {
-        console.error("Error adding segment:", error)
-      }
+    await addSegment(segment, url)
+    await refreshData()
   }
 
   const handleEditCard = (id: number) => {
@@ -93,49 +61,19 @@ export default function Page() {
 
   const handleUpdateCard = async (segment: string, url: string) => {
     if (!editingCard) return
-
-    try {
-      const res = await fetch('/api/segments', {
-        body: JSON.stringify({
-          activateOnly: false,
-          id: editingCard.id,
-          segment,
-          url,
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        method: 'PATCH'
-      })
-
-      if (!res.ok) throw new Error ('Failed to update segment')
-
-      setEditingCard(null)
-      setIsEditPopoverOpen(false)
-
-      await fetchSegments()
-    } catch (error) {
-      console.error("Error updating segment:", error)
-    }
+    await updateSegment(editingCard.id, segment, url)
+    setEditingCard(null)
+    await refreshData()
   }
 
   const handleDeleteCard = async (id: number) => {
-    try {
+    await deleteSegment(id)
+    await refreshData()
+  }
 
-      const res = await fetch('/api/segments', {
-        body: JSON.stringify({id}),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        method: 'DELETE',
-      })
-
-      if (!res.ok) throw new Error ('Failed to delete segment')
-
-      await fetchSegments()
-    } catch (error) {
-      console.error("Error deleting segment:", error)
-    }
+  const refreshData = async () => {
+    const data = await fetchSegments()
+    setCardData(data)
   }
 
   const handleDragStart = (e: React.DragEvent, cardId: number) => {
