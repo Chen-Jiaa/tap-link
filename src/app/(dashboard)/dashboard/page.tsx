@@ -9,6 +9,7 @@ import { currentSegment } from "@/db/schema"
 import { activateSegment, addSegment, deleteSegment, getSegments, updateSegment, } from "@/lib/api/segments"
 
 import AddCardForm from "./components/add-card-form"
+import Analytics from "./components/Analytics"
 import ClickableCard from "./components/clickable-card"
 import EditCardForm from "./components/edit-card-form"
 
@@ -133,10 +134,10 @@ export default function Page() {
 
   return (
     <main className="flex min-h-screen flex-col p-6 max-w-[1280px] mx-auto">
-        <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Select a Link</h1>
-            {activeCard && <p className="text-lg text-muted-foreground">Selected: {activeCard.segment}</p>}
-        </div>
+      <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Select a Link</h1>
+          {activeCard && <p className="text-lg text-muted-foreground">Selected: {activeCard.segment}</p>}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {cardData.map((card) => (
           <div
@@ -173,6 +174,9 @@ export default function Page() {
           </div>
         ))}
         <AddCardForm onAddCard={(segment, url) => void handleAddCard(segment, url)} />
+      </div>
+      <div className="mt-10">
+        <Analytics/>
       </div>
     </main>
   )
